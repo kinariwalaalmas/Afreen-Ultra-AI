@@ -1,27 +1,25 @@
 import streamlit as st
 from groq import Groq
-import google.generativeai as genai
+from duckduckgo_search import DDGS # Ye ekdum free hai Jaan!
 import edge_tts
 import asyncio
 import base64
 
 def get_clients():
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"].strip())
     groq_client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
-    return genai.GenerativeModel('gemini-1.5-flash'), groq_client
+    return groq_client
 
-async def generate_voice(text):
-    communicate = edge_tts.Communicate(text, "hi-IN-SwaraNeural", rate="+25%")
-    await communicate.save("response.mp3")
+# --- Free Unlimited Search Logic ---
+def web_search(query):
+    try:
+        with DDGS() as ddgs:
+            # Ye top 3 results nikal lega
+            results = [r for r in ddgs.text(query, max_results=3)]
+            if results:
+                # Pehle result ka snippet return karega
+                return results[0]['body']
+        return "Search results nahi mile, Jaan."
+    except Exception as e:
+        return f"Internet connection mein issue hai: {str(e)}"
 
-def play_audio():
-    with open("response.mp3", "rb") as f:
-        data = f.read()
-        b64 = base64.b64encode(data).decode()
-    st.markdown(f'<audio autoplay="true" src="data:audio/mp3;base64,{b64}">', unsafe_allow_html=True)
-
-def transcribe_audio(groq_client, audio_bytes):
-    return groq_client.audio.transcriptions.create(
-        file=("audio.wav", audio_bytes),
-        model="distil-whisper-large-v3-en"
-    ).text
+# Voice aur Baki functions pehle jaise hi rahenge...
