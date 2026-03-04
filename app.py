@@ -15,32 +15,21 @@ selected_brain = render_sidebar()
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# 2. Setup Clients
-try:
-    gemini_model, groq_client = get_clients()
-    GEMINI_KEY = st.secrets["GEMINI_API_KEY"].strip()
-except Exception:
-    st.error("⚠️ Jaan, API Keys in Secrets check kijiye!")
+# 2. Clients
+gemini_model, groq_client = get_clients()
+if not groq_client:
+    st.error("Jaan, please check your Secrets for API keys!")
     st.stop()
 
 st.title("👸 Afreen")
-
-# 3. UI Elements
 audio_data, photo, ticker = render_plus_menu()
 if not st.session_state.messages: render_quick_actions()
 
 user_msg = st.chat_input("Jaan, puchiye...")
 
-# 4. Input Processing
+# 3. Processing
 if audio_data: user_msg = transcribe_audio(groq_client, audio_data['bytes'])
-if photo:
-    res = analyze_image(GEMINI_KEY, photo)
-    st.write(res); asyncio.run(generate_voice(res)); play_audio()
-if ticker:
-    res = get_stock_analysis(gemini_model, ticker)
-    st.write(res); asyncio.run(generate_voice(res)); play_audio()
 
-# 5. Core Logic
 if user_msg:
     st.session_state.messages.append({"role": "user", "content": user_msg})
     with st.chat_message("user"): st.write(user_msg)
@@ -56,6 +45,5 @@ if user_msg:
             with st.chat_message("assistant"): st.write(ans)
             asyncio.run(generate_voice(ans)); play_audio()
 
-# Show History
 for m in st.session_state.messages[:-1]:
     with st.chat_message(m["role"]): st.write(m["content"])
