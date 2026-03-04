@@ -6,19 +6,19 @@ from gtts import gTTS
 import requests
 import io
 
-# Page Config
+# App Layout
 st.set_page_config(page_title="Afreen Ultra Smart", page_icon="👸")
 
-# API Keys from Streamlit Secrets (Baar-baar dalne ki zaroorat nahi)
+# Secrets se Keys uthana (with .strip() to remove accidental spaces)
 try:
-    GEMINI_KEY = st.secrets["GEMINI_API_KEY"]
-    GROQ_KEY = st.secrets["GROQ_API_KEY"]
-    NEWS_KEY = st.secrets["NEWS_API_KEY"]
-except Exception:
-    st.error("⚠️ Pehle Streamlit Cloud ki settings mein 'Secrets' add karein!")
+    GEMINI_KEY = st.secrets["GEMINI_API_KEY"].strip()
+    GROQ_KEY = st.secrets["GROQ_API_KEY"].strip()
+    NEWS_KEY = st.secrets["NEWS_API_KEY"].strip()
+except Exception as e:
+    st.error("⚠️ Secrets mein keys check karein!")
     st.stop()
 
-# Setup AI Models
+# AI Setup
 genai.configure(api_key=GEMINI_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 groq_client = Groq(api_key=GROQ_KEY)
@@ -29,47 +29,42 @@ def speak(text):
     tts.write_to_fp(fp)
     return fp
 
-st.title("👸 Afreen: Your Smart Assistant")
-st.write("Main khud samajh jaungi aapko kya chahiye. Bas puchiye!")
+st.title("👸 Afreen Super-AI")
 
-user_query = st.chat_input("Mujhse kuch bhi puchiye (Stocks, Business ya News)...")
+user_query = st.chat_input("Stocks, Business ya News... kuch bhi puchiye!")
 
 if user_query:
     st.chat_message("user").write(user_query)
     
-    # --- SMART ROUTER: Afreen khud faisla karegi ---
-    # Hum Gemini se puchenge ki user ka intent kya hai
-    intent_prompt = f"Categorize this query into ONE word: 'STOCK', 'NEWS', 'BUSINESS', or 'CHAT'. Query: {user_query}"
-    intent = model.generate_content(intent_prompt).text.strip().upper()
-
     with st.spinner("Afreen soch rahi hai..."):
-        response_text = ""
-        
-        # 1. Agar Stock ke baare mein hai
-        if "STOCK" in intent or ".NS" in user_query.upper():
-            # Ticker extract karne ki koshish (e.g., RELIANCE.NS)
-            words = user_query.split()
-            ticker = next((w.upper() for w in words if ".NS" in w.upper() or len(w) <= 5), "RELIANCE.NS")
-            data = yf.Ticker(ticker)
-            price = data.info.get('currentPrice', 'N/A')
-            response_text = f"{ticker} ka current price {price} hai. " + model.generate_content(f"Analyze {ticker} price {price} in Hindi briefly.").text
+        try:
+            # Smart Detection (Simple way)
+            if any(word in user_query.lower() for word in ["stock", "price", "share", ".ns"]):
+                # Stock Logic
+                ticker = "RELIANCE.NS" # Default
+                for word in user_query.upper().split():
+                    if ".NS" in word: ticker = word
+                data = yf.Ticker(ticker)
+                price = data.info.get('currentPrice', 'N/A')
+                ans = f"{ticker} ka price abhi {price} hai. Ye ek achha investment ho sakta hai."
+            
+            elif "news" in user_query.lower() or "khabar" in user_query.lower():
+                # News Logic
+                url = f"https://newsapi.org/v2/everything?q={user_query}&apiKey={NEWS_KEY}"
+                r = requests.get(url).json()
+                ans = f"Latest News: {r['articles'][0]['title']}" if r.get('articles') else "Abhi koi news nahi mili."
 
-        # 2. Agar News chahiye
-        elif "NEWS" in intent:
-            url = f"https://newsapi.org/v2/everything?q={user_query}&apiKey={NEWS_KEY}"
-            r = requests.get(url).json()
-            article = r.get('articles', [{}])[0]
-            response_text = f"Latest News: {article.get('title', 'Koi khabar nahi mili')}. " + article.get('description', '')
+            else:
+                # Fast Chat with Groq
+                chat = groq_client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[{"role": "system", "content": "You are Afreen, a business expert for Korean clothes in Surat. Answer in sweet Hindi."},
+                              {"role": "user", "content": user_query}]
+                )
+                ans = chat.choices[0].message.content
 
-        # 3. Business ya General Chat (Groq Power)
-        else:
-            chat_completion = groq_client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[{"role": "system", "content": "You are Afreen, a business and fashion expert for Korean baggy clothes in Surat. Answer in sweet Hindi-English."},
-                          {"role": "user", "content": user_query}]
-            )
-            response_text = chat_completion.choices[0].message.content
+            st.chat_message("assistant").write(ans)
+            st.audio(speak(ans), format='audio/mp3', autoplay=True)
 
-        # Output Dikhana aur Bolna
-        st.chat_message("assistant").write(response_text)
-        st.audio(speak(response_text), format='audio/mp3', autoplay=True)
+        except Exception as e:
+            st.error(f"Error: {e}. Check if your API Keys are active!")
