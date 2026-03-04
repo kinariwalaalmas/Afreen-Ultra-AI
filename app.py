@@ -6,15 +6,22 @@ from gtts import gTTS
 import requests
 import io
 
-st.set_page_config(page_title="Afreen Super-AI", layout="wide")
+# Page Config
+st.set_page_config(page_title="Afreen Ultra Smart", page_icon="👸")
 
-# --- Sidebar: Saare Power Keys Yahan Daalein ---
-st.sidebar.title("💎 Afreen Super Power Keys")
-gemini_key = st.sidebar.text_input("GEMINI_API_KEY", type="password")
-groq_key = st.sidebar.text_input("GROQ_API_KEY (For Fast Chat)", type="password")
-news_key = st.sidebar.text_input("NEWS_API_KEY (For Live News)", type="password")
+# API Keys from Streamlit Secrets (Baar-baar dalne ki zaroorat nahi)
+try:
+    GEMINI_KEY = st.secrets["GEMINI_API_KEY"]
+    GROQ_KEY = st.secrets["GROQ_API_KEY"]
+    NEWS_KEY = st.secrets["NEWS_API_KEY"]
+except Exception:
+    st.error("⚠️ Pehle Streamlit Cloud ki settings mein 'Secrets' add karein!")
+    st.stop()
 
-mode = st.sidebar.radio("Chunye Mode:", ["Business & News", "Stock Analysis", "Ultra Fast Chat"])
+# Setup AI Models
+genai.configure(api_key=GEMINI_KEY)
+model = genai.GenerativeModel('gemini-1.5-flash')
+groq_client = Groq(api_key=GROQ_KEY)
 
 def speak(text):
     tts = gTTS(text=text, lang='hi')
@@ -22,38 +29,47 @@ def speak(text):
     tts.write_to_fp(fp)
     return fp
 
-# --- Mode 1: Business & Live News ---
-if mode == "Business & News":
-    st.header("📰 Business Intelligence & Live News")
-    topic = st.text_input("Kiske baare mein news chahiye? (e.g., 'Surat Textile Market', 'Korean Fashion')", "Surat Clothing Market")
+st.title("👸 Afreen: Your Smart Assistant")
+st.write("Main khud samajh jaungi aapko kya chahiye. Bas puchiye!")
+
+user_query = st.chat_input("Mujhse kuch bhi puchiye (Stocks, Business ya News)...")
+
+if user_query:
+    st.chat_message("user").write(user_query)
     
-    if st.button("Get Live Updates"):
-        if news_key:
-            url = f"https://newsapi.org/v2/everything?q={topic}&apiKey={news_key}"
+    # --- SMART ROUTER: Afreen khud faisla karegi ---
+    # Hum Gemini se puchenge ki user ka intent kya hai
+    intent_prompt = f"Categorize this query into ONE word: 'STOCK', 'NEWS', 'BUSINESS', or 'CHAT'. Query: {user_query}"
+    intent = model.generate_content(intent_prompt).text.strip().upper()
+
+    with st.spinner("Afreen soch rahi hai..."):
+        response_text = ""
+        
+        # 1. Agar Stock ke baare mein hai
+        if "STOCK" in intent or ".NS" in user_query.upper():
+            # Ticker extract karne ki koshish (e.g., RELIANCE.NS)
+            words = user_query.split()
+            ticker = next((w.upper() for w in words if ".NS" in w.upper() or len(w) <= 5), "RELIANCE.NS")
+            data = yf.Ticker(ticker)
+            price = data.info.get('currentPrice', 'N/A')
+            response_text = f"{ticker} ka current price {price} hai. " + model.generate_content(f"Analyze {ticker} price {price} in Hindi briefly.").text
+
+        # 2. Agar News chahiye
+        elif "NEWS" in intent:
+            url = f"https://newsapi.org/v2/everything?q={user_query}&apiKey={NEWS_KEY}"
             r = requests.get(url).json()
-            articles = r.get('articles', [])[:3]
-            for art in articles:
-                st.write(f"📢 **{art['title']}**")
-                st.caption(art['description'])
-        else:
-            st.warning("Pehle News API Key daalein!")
+            article = r.get('articles', [{}])[0]
+            response_text = f"Latest News: {article.get('title', 'Koi khabar nahi mili')}. " + article.get('description', '')
 
-# --- Mode 3: Ultra Fast Chat (Groq Power) ---
-elif mode == "Ultra Fast Chat":
-    st.header("⚡ Ultra Fast Chat (Powered by Groq)")
-    user_input = st.chat_input("Afreen se kuch bhi puchiye...")
-    
-    if user_input:
-        if groq_key:
-            client = Groq(api_key=groq_key)
-            completion = client.chat.completions.create(
+        # 3. Business ya General Chat (Groq Power)
+        else:
+            chat_completion = groq_client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
-                messages=[{"role": "user", "content": f"Baat karo ek dost ki tarah Hindi mein: {user_input}"}]
+                messages=[{"role": "system", "content": "You are Afreen, a business and fashion expert for Korean baggy clothes in Surat. Answer in sweet Hindi-English."},
+                          {"role": "user", "content": user_query}]
             )
-            ans = completion.choices[0].message.content
-            st.write(ans)
-            st.audio(speak(ans), format='audio/mp3', autoplay=True)
-        else:
-            st.info("Fast chat ke liye Groq Key daalein, varna Gemini use karein.")
+            response_text = chat_completion.choices[0].message.content
 
-# (Stock Analysis wala part pehle jaisa hi rahega...)
+        # Output Dikhana aur Bolna
+        st.chat_message("assistant").write(response_text)
+        st.audio(speak(response_text), format='audio/mp3', autoplay=True)
