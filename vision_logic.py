@@ -2,18 +2,26 @@ import google.generativeai as genai
 import PIL.Image
 
 def analyze_image(api_key, image_data):
-    genai.configure(api_key=api_key)
+    # API Key setup
+    genai.configure(api_key=api_key.strip())
+    
+    # Model select (NotFound error se bachne ke liye exact name)
     model = genai.GenerativeModel('gemini-1.5-flash')
     
     prompt = """
-    Act as an expert shopping assistant and fabric specialist. 
-    Analyze this image in detail:
-    1. Agar ye kapde (clothes) hain: Batayein ki ye kis type ka fabric hai, iska estimated GSM kitna ho sakta hai, aur iska styling kaisa hai.
-    2. Sourcing: Ye Surat ya online market mein kahan mil sakta hai aur estimated price kya hogi.
-    3. Agar ye koi aur product hai: Uske specs aur use batayein.
-    Answer in sweet Hinglish (Hindi + English mix) and be very helpful.
+    Aap ek expert clothing aur product specialist hain. 
+    Is photo ko analyze karke ye batayein:
+    1. Agar ye clothes hain: Fabric type (e.g. Cotton, Terry), estimated GSM (e.g. 240, 300), aur baggy style details.
+    2. Sourcing: Ye Surat ya online market mein kis price range mein mil sakta hai.
+    3. Agar koi aur product hai: Uske baare mein full details dein.
+    
+    Hamesha sweet Hinglish (Hindi + English mix) mein jawab dein aur user ko 'Beby' keh kar address karein.
     """
     
-    img = PIL.Image.open(image_data)
-    response = model.generate_content([prompt, img])
-    return response.text
+    try:
+        img = PIL.Image.open(image_data)
+        # Content generate karna
+        response = model.generate_content([prompt, img])
+        return response.text
+    except Exception as e:
+        return f"Sorry beby, photo analyze karne mein ye error aaya: {str(e)}"
