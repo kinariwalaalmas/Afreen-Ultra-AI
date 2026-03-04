@@ -1,88 +1,48 @@
 import streamlit as st
-import google.generativeai as genai
-from groq import Groq
-import edge_tts
 import asyncio
-import base64
-import PIL.Image
-from streamlit_mic_recorder import mic_recorder
 from styles import apply_styles
+from ai_engine import get_clients, generate_voice, play_audio, transcribe_audio
+from ui_components import render_plus_menu
 from vision_logic import analyze_image
 
-# UI Initialization
+# 1. Initialize
 apply_styles()
-
-# Secrets Loading
-GEMINI_KEY = st.secrets["GEMINI_API_KEY"].strip()
-GROQ_KEY = st.secrets["GROQ_API_KEY"].strip()
-
-genai.configure(api_key=GEMINI_KEY)
-vision_model = genai.GenerativeModel('gemini-1.5-flash')
-groq_client = Groq(api_key=GROQ_KEY)
-
-# --- Real Voice Logic ---
-async def speak_now(text):
-    communicate = edge_tts.Communicate(text, "hi-IN-SwaraNeural", rate="+25%")
-    await communicate.save("afreen_voice.mp3")
-
-def play_audio(file):
-    with open(file, "rb") as f:
-        data = f.read()
-        b64 = base64.b64encode(data).decode()
-    st.markdown(f'<audio autoplay="true" src="data:audio/mp3;base64,{b64}">', unsafe_allow_html=True)
+gemini_model, groq_client = get_clients()
 
 st.title("👸 Afreen")
 
-# --- THE GEMINI "+" MENU ---
-with st.popover("＋"):
-    st.write("### Tools")
-    
-    # 🎤 Mic Option
-    st.write("Bol kar baat karein:")
-    audio_data = mic_recorder(start_prompt="Record Voice 🎤", stop_prompt="Done ✅", key='mic')
-    
-    st.divider()
-    
-    # 📷 Camera/Gallery Option
-    st.write("Photo analysis:")
-    photo = st.file_uploader("Upload or Capture", type=["jpg", "png", "jpeg"], label_visibility="collapsed")
+# 2. Render UI Components (Plus Menu)
+audio_data, uploaded_photo = render_plus_menu()
 
-# Standard Chat Input
+# 3. Handling User Input
 user_msg = st.chat_input("Beby, mujhse baat karo...")
 
-# --- LOGIC HANDLING ---
-
-# 1. Voice to Text (Whisper)
+# Voice handle
 if audio_data:
-    with st.spinner("Processing..."):
-        transcription = groq_client.audio.transcriptions.create(
-            file=("audio.wav", audio_data['bytes']),
-            model="distil-whisper-large-v3-en"
-        )
-        user_msg = transcription.text
+    with st.spinner("Sun rahi hoon..."):
+        user_msg = transcribe_audio(groq_client, audio_data['bytes'])
 
-# 2. Image Analysis
-if photo:
-    st.image(photo, width=150)
-    if st.button("Analyze this Photo 🔍"):
-        with st.spinner("Afreen dekh rahi hai..."):
-            res = analyze_image(GEMINI_KEY, photo)
-            st.write(res)
-            asyncio.run(speak_now(res))
-            play_audio("afreen_voice.mp3")
+# Photo handle
+if uploaded_photo:
+    st.image(uploaded_photo, width=150)
+    if st.button("Analyze Photo 🔍"):
+        res = analyze_image(st.secrets["GEMINI_API_KEY"], uploaded_photo)
+        st.write(res)
+        asyncio.run(generate_voice(res))
+        play_audio()
 
-# 3. Main Chat (Hinglish + Masculine)
+# Chat Logic (Masculine Grammar)
 if user_msg:
     st.chat_message("user").write(user_msg)
-    with st.spinner("Thinking..."):
-        chat = groq_client.chat.completions.create(
+    with st.spinner("Afreen is thinking..."):
+        chat_res = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
-                {"role": "system", "content": "You are Afreen, a sweet Hinglish girl. ALWAYS use masculine grammar (Kaise ho, kar rahe ho). Help Beby with his clothing business in Surat and stocks."},
+                {"role": "system", "content": "You are Afreen, a sweet Hinglish girl. ALWAYS use MASCULINE grammar (Kaise ho, kar rahe ho) for Beby. Help him with his clothing business in Surat."},
                 {"role": "user", "content": user_msg}
             ]
-        )
-        ans = chat.choices[0].message.content
-        st.chat_message("assistant").write(ans)
-        asyncio.run(speak_now(ans))
-        play_audio("afreen_voice.mp3")
+        ).choices[0].message.content
+        
+        st.chat_message("assistant").write(chat_res)
+        asyncio.run(generate_voice(chat_res))
+        play_audio()
