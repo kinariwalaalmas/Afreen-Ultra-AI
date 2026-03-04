@@ -1,6 +1,6 @@
 streamlit
 google-generativeai
-yfinance
-gTTS
 groq
-requests
+yfinance
+edge-tts
+streamlit-mic-recorder
