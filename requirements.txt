@@ -5,3 +5,4 @@ yfinance
 edge-tts
 streamlit-mic-recorder
 Pillow
+duckduckgo-search
