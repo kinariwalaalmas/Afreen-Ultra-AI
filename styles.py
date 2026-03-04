@@ -3,23 +3,32 @@ import streamlit as st
 def apply_styles():
     st.markdown("""
         <style>
-        .stApp { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); }
-        /* Professional Buttons */
-        div.stButton > button:first-child {
-            background-color: #ff4b4b;
-            color: white;
-            border-radius: 10px;
-            border: none;
-            height: 3em;
-            width: 100%;
-            font-weight: bold;
-            transition: 0.3s;
+        /* Modern Background */
+        .stApp {
+            background: linear-gradient(135deg, #1e1e2f 0%, #2d2d44 100%);
+            color: #ffffff;
         }
-        div.stButton > button:hover {
-            background-color: #ff2b2b;
-            transform: scale(1.02);
-        }
-        /* Hide Audio Player */
+        
+        /* Hide default audio player */
         audio { display: none; }
+
+        /* Popover (Plus Menu) Styling */
+        div[data-testid="stPopover"] > button {
+            border-radius: 50% !important;
+            width: 50px !important;
+            height: 50px !important;
+            background-color: #4f46e5 !important;
+            color: white !important;
+            font-size: 24px !important;
+            border: none !important;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
+        }
+
+        /* Chat Message Bubbles */
+        .stChatMessage {
+            border-radius: 15px !important;
+            padding: 10px !important;
+            margin-bottom: 10px !important;
+        }
         </style>
     """, unsafe_allow_html=True)
