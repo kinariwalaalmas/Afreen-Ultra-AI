@@ -30,26 +30,3 @@ def play_audio():
 
 def transcribe_audio(client, audio_bytes):
     return client.audio.transcriptions.create(file=("audio.wav", audio_bytes), model="distil-whisper-large-v3-en").text
-    await communicate.save("response.mp3")
-
-def play_audio():
-    """Audio file ko background mein play karna"""
-    try:
-        with open("response.mp3", "rb") as f:
-            data = f.read()
-            b64 = base64.b64encode(data).decode()
-        st.markdown(f'<audio autoplay="true" src="data:audio/mp3;base64,{b64}">', unsafe_allow_html=True)
-    except Exception as e:
-        st.warning(f"Audio play nahi ho paya, Jaan: {e}")
-
-# --- 4. Voice to Text (Whisper) ---
-def transcribe_audio(groq_client, audio_bytes):
-    """Mic ki awaaz ko text mein badalna"""
-    try:
-        transcription = groq_client.audio.transcriptions.create(
-            file=("audio.wav", audio_bytes),
-            model="distil-whisper-large-v3-en"
-        )
-        return transcription.text
-    except Exception as e:
-        return f"Aapki awaaz samajh nahi aayi, Jaan: {e}"
