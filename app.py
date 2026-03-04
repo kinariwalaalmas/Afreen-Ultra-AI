@@ -12,7 +12,7 @@ from vision_logic import analyze_image
 # UI Initialization
 apply_styles()
 
-# Keys Loading
+# Secrets Loading
 GEMINI_KEY = st.secrets["GEMINI_API_KEY"].strip()
 GROQ_KEY = st.secrets["GROQ_API_KEY"].strip()
 
@@ -20,70 +20,69 @@ genai.configure(api_key=GEMINI_KEY)
 vision_model = genai.GenerativeModel('gemini-1.5-flash')
 groq_client = Groq(api_key=GROQ_KEY)
 
-# --- Voice Engine ---
-async def text_to_speech(text):
+# --- Real Voice Logic ---
+async def speak_now(text):
     communicate = edge_tts.Communicate(text, "hi-IN-SwaraNeural", rate="+25%")
-    await communicate.save("response.mp3")
+    await communicate.save("afreen_voice.mp3")
 
-def play_audio(file_path):
-    with open(file_path, "rb") as f:
+def play_audio(file):
+    with open(file, "rb") as f:
         data = f.read()
         b64 = base64.b64encode(data).decode()
     st.markdown(f'<audio autoplay="true" src="data:audio/mp3;base64,{b64}">', unsafe_allow_html=True)
 
-st.title("👸 Afreen Chat")
+st.title("👸 Afreen")
 
-# --- THE "+" ICON MENU ---
-# Yahan humne popover use kiya hai jo bilkul menu ki tarah khulta hai
-with st.popover("➕"):
+# --- THE GEMINI "+" MENU ---
+with st.popover("＋"):
     st.write("### Tools")
     
-    # 🎤 Mic Section
-    st.write("Speak to me:")
-    audio_data = mic_recorder(start_prompt="Start Mic 🎤", stop_prompt="Stop 🛑", key='recorder')
+    # 🎤 Mic Option
+    st.write("Bol kar baat karein:")
+    audio_data = mic_recorder(start_prompt="Record Voice 🎤", stop_prompt="Done ✅", key='mic')
     
     st.divider()
     
-    # 📷 Photo Section
-    st.write("Upload Photo:")
-    uploaded_file = st.file_uploader("Choose a photo", type=["jpg", "png", "jpeg"], label_visibility="collapsed")
+    # 📷 Camera/Gallery Option
+    st.write("Photo analysis:")
+    photo = st.file_uploader("Upload or Capture", type=["jpg", "png", "jpeg"], label_visibility="collapsed")
 
-# Placeholder for final input
-user_input = st.chat_input("Beby, mujhse baat karo...")
+# Standard Chat Input
+user_msg = st.chat_input("Beby, mujhse baat karo...")
 
 # --- LOGIC HANDLING ---
 
-# 1. Handle Voice Input
+# 1. Voice to Text (Whisper)
 if audio_data:
-    with st.spinner("Processing voice..."):
+    with st.spinner("Processing..."):
         transcription = groq_client.audio.transcriptions.create(
             file=("audio.wav", audio_data['bytes']),
             model="distil-whisper-large-v3-en"
         )
-        user_input = transcription.text
+        user_msg = transcription.text
 
-# 2. Handle Photo Input
-if uploaded_file:
-    st.image(uploaded_file, width=200, caption="Selected Image")
-    if st.button("Analyze Uploaded Photo 🔍"):
-        with st.spinner("Afreen is looking..."):
-            ans = analyze_image(GEMINI_KEY, uploaded_file)
-            st.write(ans)
-            asyncio.run(text_to_speech(ans))
-            play_audio("response.mp3")
+# 2. Image Analysis
+if photo:
+    st.image(photo, width=150)
+    if st.button("Analyze this Photo 🔍"):
+        with st.spinner("Afreen dekh rahi hai..."):
+            res = analyze_image(GEMINI_KEY, photo)
+            st.write(res)
+            asyncio.run(speak_now(res))
+            play_audio("afreen_voice.mp3")
 
-# 3. Handle Main Chat
-if user_input:
-    st.chat_message("user").write(user_input)
+# 3. Main Chat (Hinglish + Masculine)
+if user_msg:
+    st.chat_message("user").write(user_msg)
     with st.spinner("Thinking..."):
         chat = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
-                {"role": "system", "content": "You are Afreen, a sweet Hinglish girl. Use masculine grammar for user (Kaise ho). Talk about Surat business & stocks. Call him Beby."},
-                {"role": "user", "content": user_input}
+                {"role": "system", "content": "You are Afreen, a sweet Hinglish girl. ALWAYS use masculine grammar (Kaise ho, kar rahe ho). Help Beby with his clothing business in Surat and stocks."},
+                {"role": "user", "content": user_msg}
             ]
         )
         ans = chat.choices[0].message.content
         st.chat_message("assistant").write(ans)
-        asyncio.run(text_to_speech(ans))
-        play_audio("response.mp3")
+        asyncio.run(speak_now(ans))
+        play_audio("afreen_voice.mp3")
