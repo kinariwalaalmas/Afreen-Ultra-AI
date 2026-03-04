@@ -3,32 +3,46 @@ import streamlit as st
 def apply_styles():
     st.markdown("""
         <style>
-        /* Modern Background */
+        /* Mobile-Friendly Background */
         .stApp {
-            background: linear-gradient(135deg, #1e1e2f 0%, #2d2d44 100%);
-            color: #ffffff;
+            background-color: #131314;
+            color: #e3e3e3;
         }
-        
+
         /* Hide default audio player */
         audio { display: none; }
 
-        /* Popover (Plus Menu) Styling */
-        div[data-testid="stPopover"] > button {
-            border-radius: 50% !important;
-            width: 50px !important;
-            height: 50px !important;
-            background-color: #4f46e5 !important;
-            color: white !important;
-            font-size: 24px !important;
-            border: none !important;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
+        /* Plus Button (Popover) ko Chat Input ke paas laane ke liye */
+        div[data-testid="stPopover"] {
+            position: fixed;
+            bottom: 22px;
+            left: 15px;
+            z-index: 1000;
         }
 
-        /* Chat Message Bubbles */
-        .stChatMessage {
-            border-radius: 15px !important;
-            padding: 10px !important;
-            margin-bottom: 10px !important;
+        div[data-testid="stPopover"] > button {
+            border-radius: 50% !important;
+            width: 45px !important;
+            height: 45px !important;
+            background-color: #1f1f20 !important;
+            color: #8e918f !important;
+            border: 1px solid #444746 !important;
+            font-size: 24px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Chat Input ko thoda right shift karna taki Plus ke liye jagah bane */
+        .stChatInputContainer {
+            padding-left: 60px !important;
+            background-color: transparent !important;
+        }
+
+        .stChatInputContainer > div {
+            background-color: #1e1f20 !important;
+            border-radius: 28px !important;
+            border: 1px solid #444746 !important;
         }
         </style>
     """, unsafe_allow_html=True)
