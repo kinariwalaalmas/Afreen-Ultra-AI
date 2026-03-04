@@ -1,6 +1,8 @@
 streamlit
 google-generativeai
 groq
+openai
+anthropic
 yfinance
 edge-tts
 streamlit-mic-recorder
