@@ -4,3 +4,4 @@ groq
 yfinance
 edge-tts
 streamlit-mic-recorder
+Pillow
