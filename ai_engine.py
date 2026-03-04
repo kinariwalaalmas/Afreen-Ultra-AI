@@ -1,39 +1,35 @@
 import streamlit as st
 from groq import Groq
-from duckduckgo_search import DDGS # Free unlimited search ke liye
+import google.generativeai as genai
+from duckduckgo_search import DDGS
 import edge_tts
 import asyncio
 import base64
 
-# --- 1. Clients Setup ---
 def get_clients():
-    # Groq client initialize karna
-    try:
-        groq_client = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
-        return groq_client
-    except Exception as e:
-        st.error(f"Jaan, Groq API key mein issue hai: {e}")
-        return None
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"].strip())
+    gemini = genai.GenerativeModel('gemini-1.5-flash')
+    groq = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
+    return gemini, groq
 
-# --- 2. Free Web Search (DuckDuckGo) ---
 def web_search(query):
-    """Bina kisi API key ke internet se news dhoondne ke liye"""
     try:
         with DDGS() as ddgs:
-            # Top 3 results nikalna
-            results = [r for r in ddgs.text(query, max_results=3)]
-            if results:
-                # Pehle result ki main body return karna
-                return results[0]['body']
-        return "Jaan, internet par is baare mein kuch naya nahi mila."
-    except Exception as e:
-        return f"Search fail ho gaya: {str(e)}"
+            res = [r for r in ddgs.text(query, max_results=2)]
+            return res[0]['body'] if res else ""
+    except: return ""
 
-# --- 3. Natural Voice Engine (Edge-TTS) ---
 async def generate_voice(text):
-    """Realistic awaaz generate karna"""
-    # Rate +25% rakha hai taaki robotic na lage
     communicate = edge_tts.Communicate(text, "hi-IN-SwaraNeural", rate="+25%")
+    await communicate.save("response.mp3")
+
+def play_audio():
+    with open("response.mp3", "rb") as f:
+        b64 = base64.b64encode(f.read()).decode()
+    st.markdown(f'<audio autoplay="true" src="data:audio/mp3;base64,{b64}">', unsafe_allow_html=True)
+
+def transcribe_audio(client, audio_bytes):
+    return client.audio.transcriptions.create(file=("audio.wav", audio_bytes), model="distil-whisper-large-v3-en").text
     await communicate.save("response.mp3")
 
 def play_audio():
