@@ -6,7 +6,7 @@ def render_plus_menu():
         st.write("### Tools")
         audio = mic_recorder(start_prompt="Record 🎤", stop_prompt="Done ✅", key='mic')
         st.divider()
-        photo = st.file_uploader("Upload Image", type=["jpg", "png", "jpeg"], label_visibility="collapsed")
+        photo = st.file_uploader("Upload Photo", type=["jpg", "png", "jpeg"], label_visibility="collapsed")
         st.divider()
-        ticker = st.text_input("Stock (e.g. RELIANCE.NS)", key="st_ticker")
+        ticker = st.text_input("Stock Analysis (e.g. RELIANCE.NS)", key="st_ticker")
     return audio, photo, ticker
