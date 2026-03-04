@@ -8,5 +8,5 @@ def render_plus_menu():
         st.divider()
         photo = st.file_uploader("Upload Image", type=["jpg", "png", "jpeg"], label_visibility="collapsed")
         st.divider()
-        ticker = st.text_input("Stock Ticker (e.g. RELIANCE.NS)", key="st_ticker")
+        ticker = st.text_input("Stock (e.g. RELIANCE.NS)", key="st_ticker")
     return audio, photo, ticker
