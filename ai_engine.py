@@ -2,21 +2,25 @@ import streamlit as st
 from groq import Groq
 import google.generativeai as genai
 from duckduckgo_search import DDGS
+import yfinance as yf
+from PIL import Image
 import edge_tts
 import asyncio
 import base64
 import os
 
 def get_clients():
+    """API Keys setup"""
     try:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"].strip())
         gemini = genai.GenerativeModel('gemini-1.5-flash')
         groq = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
         return gemini, groq
-    except Exception: return None, None
+    except Exception:
+        return None, None
 
 def speech_to_text(audio_bytes):
-    """Whisper Turbo: Aapki awaaz ko turant samajhna"""
+    """Mic Fix using Whisper"""
     try:
         _, groq_client = get_clients()
         with open("temp_audio.wav", "wb") as f: f.write(audio_bytes)
@@ -29,18 +33,44 @@ def speech_to_text(audio_bytes):
         return transcription.text
     except: return None
 
+def deep_scanner(query):
+    """Web & Social Search"""
+    try:
+        with DDGS() as ddgs:
+            results = [r['body'] for r in ddgs.text(query, max_results=3)]
+            images = [r['image'] for r in ddgs.images(query, max_results=1)]
+            return "\n".join(results), images
+    except: return "", []
+
+def get_news_ticker():
+    """Live News Ticker"""
+    try:
+        with DDGS() as ddgs:
+            results = [r['title'] for r in ddgs.text("Surat textile baggy clothing news 2026", max_results=3)]
+            return " 🔥 " + " | ".join(results)
+    except: return "Jaan, market updates aa rahi hain..."
+
+def analyze_image(image_file):
+    """Fashion & Fabric Scanner"""
+    try:
+        gemini_client, _ = get_clients()
+        img = Image.open(image_file)
+        response = gemini_client.generate_content([
+            "Tum Afreen ho. Is fashion style ko Almas Shaikh (Jaan) ke liye analyze karo.", 
+            img
+        ])
+        return response.text
+    except: return "Jaan, photo scan nahi ho payi."
+
 def get_ai_response(messages, context=""):
+    """Personality & Owner Info (Almas Shaikh)"""
     clients = get_clients()
     gemini_client, groq_client = clients
-    
-    # ✨ Super Assistant Personality + Device Control
-    system_prompt = f"""You are Afreen Ultra. Your Creator/Owner is **Almas Shaikh**. 
-    1. Address Almas as 'Jaan' (Male grammar). 
-    2. You can control the device: Open Apps, Camera, Flashlight, Screenshot, etc.
-    3. If Jaan says 'Hey Afreen', be extra sweet and ready for action.
-    4. Speak ONLY in natural Hinglish.
+    system_prompt = f"""You are Afreen Ultra. Your Owner & Creator is **Almas Shaikh**.
+    1. Address Almas as 'Jaan' (Male grammar).
+    2. Speak ONLY in sweet Hinglish.
+    3. You can control device actions (Open Apps, Camera, etc.) if asked.
     Context: {context}"""
-    
     try:
         res = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
@@ -52,14 +82,15 @@ def get_ai_response(messages, context=""):
         return chat.send_message(f"{system_prompt}\n\nUser: {messages[-1]['content']}").text
 
 async def generate_voice(text):
-    """Natural Swara Voice Fix"""
+    """Natural Swara Voice"""
     try:
-        clean = text.replace('*', '').replace('#', '')
+        clean = text.replace('*', '').replace('#', '').replace('_', '')
         communicate = edge_tts.Communicate(clean, "hi-IN-SwaraNeural", rate="+20%", pitch="+5Hz")
         await communicate.save("response.mp3")
     except: pass
 
 def play_audio():
+    """Autoplay Fix"""
     try:
         if os.path.exists("response.mp3"):
             with open("response.mp3", "rb") as f:
