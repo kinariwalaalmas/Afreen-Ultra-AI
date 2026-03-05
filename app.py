@@ -1,42 +1,45 @@
 import streamlit as st
 import asyncio
-from styles import apply_styles
-from ui_components import render_plus_menu, render_sidebar
-from ai_engine import deep_scanner, get_ai_response, generate_voice, play_audio
+from ui_components import render_sidebar
+from ai_engine import speech_to_text, get_ai_response, generate_voice, play_audio, get_news_ticker, analyze_image
 
-st.set_page_config(page_title="Afreen Pro", layout="wide")
-apply_styles()
+st.set_page_config(page_title="Afreen Ultra", layout="wide")
 render_sidebar()
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-    welcome = "Hey Jaan! 👸 Afreen haazir hai. Bataiye, aaj kiski ID scan karni hai?"
-    st.session_state.messages.append({"role": "assistant", "content": welcome})
-    asyncio.run(generate_voice(welcome))
+# 1. News Ticker (Top)
+st.markdown(f"**📢 News:** <marquee>{get_news_ticker()}</marquee>", unsafe_allow_html=True)
 
-st.title("👸 Afreen Ultra Pro")
-id_url, scan_btn, audio, photo = render_plus_menu()
+# 2. Business Planner (Sidebar)
+if "tasks" not in st.session_state: st.session_state.tasks = []
+with st.sidebar:
+    st.write("📋 **Daily Planner**")
+    new_task = st.text_input("Add Task")
+    if st.button("Add"): st.session_state.tasks.append(new_task)
+    for t in st.session_state.tasks: st.checkbox(t)
 
-# Initial Greeting Voice
-if len(st.session_state.messages) == 1: play_audio()
+# 3. Main Chat & Tools
+st.title("👸 Afreen Pro 2026")
 
-for m in st.session_state.messages:
-    with st.chat_message(m["role"]): st.write(m["content"])
+# Layout: Mic Left, Chat Right
+from streamlit_mic_recorder import mic_recorder
+col1, col2 = st.columns([1, 6])
+with col1:
+    audio_data = mic_recorder(start_prompt="🎤", stop_prompt="🛑", key='main_mic')
+with col2:
+    img_file = st.file_uploader("📷 Fashion Scan", type=['jpg', 'png'])
+    user_input = st.chat_input("Jaan, puchiye...")
 
-user_input = st.chat_input("Jaan, puchiye...") or (id_url if scan_btn else None)
+# 🎤 Voice Handling (Mic Fix Solution)
+if audio_data and audio_data.get('bytes'):
+    with st.spinner("Afreen sun rahi hai..."):
+        transcript = speech_to_text(audio_data['bytes'])
+        if transcript: user_input = transcript
 
-if user_input:
-    st.session_state.messages.append({"role": "user", "content": user_input})
-    with st.chat_message("user"): st.write(user_input)
+# 🖼️ Image Recognition Handling
+if img_file:
+    with st.spinner("Scanning fabric..."):
+        ans = analyze_image(img_file)
+        st.write(ans)
+        asyncio.run(generate_voice(ans)); play_audio()
 
-    with st.spinner("Afreen is scanning public records..."):
-        context, images = deep_scanner(user_input)
-        ans = get_ai_response(st.session_state.messages, context)
-        st.session_state.messages.append({"role": "assistant", "content": ans})
-        
-        with st.chat_message("assistant"):
-            st.write(ans)
-            if images: st.image(images[0], caption=f"Visual for {user_input}")
-        
-        asyncio.run(generate_voice(ans))
-        play_audio()
+# ... (Previous Chat Logic) ...
