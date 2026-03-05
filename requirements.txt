@@ -1,9 +1,7 @@
 streamlit
 groq
 google-generativeai
-duckduckgo-search
-yfinance
-pillow
-edge-tts
+duckduckgo_search
+Pillow
 streamlit-mic-recorder
-streamlit-autorefresh
+edge-tts
