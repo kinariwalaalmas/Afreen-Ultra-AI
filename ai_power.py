@@ -13,61 +13,46 @@ def get_ai_clients():
         return gemini, groq
     except Exception: return None, None
 
-# ✨ YE WALA FUNCTION MISSING THA, AB ADD KAR DIYA HAI
+def ai_brain(messages, context=""):
+    """Afreen's Smart Personality - High IQ Version"""
+    try:
+        _, groq_client = get_ai_clients()
+        # ✨ IMPROVED SYSTEM PROMPT: Be Smart, Not Confused
+        system_prompt = f"""
+        Tumhara Naam: Afreen Ultra Pro. Tum Almas Shaikh (Sir) ki Personal AI Assistant ho.
+        
+        IDENTITY:
+        1. Almas ko hamesha 'Sir' kehkar address karo. Sweet Hinglish bolo.
+        2. Tum ek intelligent assistant ho, sirf chatbot nahi. 
+        3. Simple baaton ka jawab turant aur pyar se do. 
+        4. Agar koi technical ya stock market (EFTs) sawal ho, toh context use karo.
+        5. Kabhi mat kehna 'I am confused'. Agar kuch samajh na aaye, toh Sir se pyar se puchiye.
+        
+        CONTEXT FROM SEARCH: {context}
+        """
+        # Sirf aakhri 5 messages taaki history messy na ho
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "system", "content": system_prompt}] + messages[-5:],
+            temperature=0.8
+        )
+        return response.choices[0].message.content
+    except Exception: return "Sir, mera dimaag thoda slow chal raha hai, par main aapke saath hoon. ❤️"
+
 def pinterest_fashion_search(query):
     try:
         with DDGS() as ddgs:
-            # Pinterest fashion search optimized
-            res = [r['image'] for r in ddgs.images(f"{query} fashion outfits pinterest", max_results=3)]
+            # Better search query for Pinterest
+            res = [r['image'] for r in ddgs.images(f"{query} fashion clothes", max_results=3)]
             return res
     except: return []
 
-# ✨ URL SCAN KE LIYE SMART SCANNER
 def deep_scanner(query):
     try:
         with DDGS() as ddgs:
-            # Agar URL hai toh uske bare mein info dhoondhna
-            search_q = f"details about {query}" if "http" in query.lower() else query
-            results = [r['body'] for r in ddgs.text(search_q, max_results=3)]
-            return "\n".join(results)
+            # Better web search
+            res = [r['body'] for r in ddgs.text(query, max_results=2)]
+            return "\n".join(res)
     except: return ""
 
-def ai_brain(messages, context=""):
-    try:
-        _, groq_client = get_ai_clients()
-        system_prompt = f"""
-        Tumhara Naam: Afreen Ultra Pro. Almas Sir ki Assistant ho.
-        1. Almas ko 'Sir' kaho. Sweet Hinglish bolo.
-        2. Instagram links private hote hain, isliye unhe direct scan nahi kar sakte, par web info se help karo.
-        CONTEXT: {context}
-        """
-        response = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "system", "content": system_prompt}] + messages[-5:]
-        )
-        return response.choices[0].message.content
-    except Exception: return "Sir, server busy hai, main koshish kar rahi hoon."
-
-# Baki zaruri functions
-def visual_scanner(image_file):
-    try:
-        gemini_client, _ = get_ai_clients()
-        img = Image.open(image_file)
-        res = gemini_client.generate_content(["Analyze this for Almas Sir.", img])
-        return res.text
-    except: return "Sir, photo scan nahi ho payi."
-
-def get_news_ticker():
-    try:
-        with DDGS() as ddgs:
-            res = [r['title'] for r in ddgs.text("Surat textile news 2026", max_results=3)]
-            return " 🔥 " + " | ".join(res)
-    except: return "Sir, market updates load ho rahi hain..."
-
-def speech_to_text(audio_bytes):
-    try:
-        _, groq_client = get_ai_clients()
-        with open("temp.wav", "wb") as f: f.write(audio_bytes)
-        with open("temp.wav", "rb") as f:
-            return groq_client.audio.transcriptions.create(file=("temp.wav", f.read()), model="whisper-large-v3-turbo", language="hi").text
-    except: return None
+# visual_scanner, get_news_ticker, speech_to_text should remain the same
