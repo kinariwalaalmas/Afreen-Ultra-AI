@@ -1,50 +1,44 @@
 import streamlit as st
 
 def apply_ui_power():
-    """App ka professional look aur sticky toolbar fix"""
+    """Green Mic Visibility aur Professional Layout Fix"""
     st.markdown("""
     <style>
-    /* Full App Theme */
     .stApp { background-color: #fdf2f8; }
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
+    header, footer {visibility: hidden;}
     
-    /* 🟢 Green Mic Styling */
-    div[data-testid="stVerticalBlock"] > div:has(button:contains("🎙️")) button {
+    /* 🟢 GREEN MIC FIX - Sabse upar dikhne ke liye */
+    button[aria-label="🎙️"] {
         background-color: #25D366 !important;
-        color: white !important;
         border-radius: 50% !important;
-        width: 60px !important;
-        height: 60px !important;
-        border: none !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important;
+        width: 55px !important;
+        height: 55px !important;
+        color: white !important;
+        border: 3px solid white !important;
+        box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4) !important;
+        font-size: 24px !important;
     }
 
-    /* ➕ Plus Button Styling */
+    /* ➕ PLUS BUTTON */
     .stPopover button {
         background-color: #db2777 !important;
         color: white !important;
         border-radius: 50% !important;
-        font-size: 24px !important;
+        font-size: 22px !important;
     }
 
     /* Chat Bubbles */
-    .stChatMessage { border-radius: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .stChatMessage { border-radius: 18px; margin-bottom: 10px; }
     
-    /* Sticky Bottom Container */
-    [data-testid="stVerticalBlock"] > div:has(div.stChatInput) {
-        position: fixed;
-        bottom: 10px;
-        z-index: 1000;
-        background: white;
-        padding: 10px;
-        border-radius: 30px;
+    /* Search Bar inside Popover Styling */
+    .stTextInput input {
+        border-radius: 20px !important;
+        border: 1px solid #db2777 !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
 def render_sidebar_power():
     with st.sidebar:
-        st.markdown("<h1 style='text-align: center; color: #db2777;'>👸 Afreen Ultra</h1>", unsafe_allow_html=True)
-        st.info("Created & Owned by:\n**Almas Shaikh**")
-        st.success("Business: **Surat Baggy Fashion**")
+        st.markdown("<h2 style='color: #db2777;'>👸 Afreen Pro</h2>", unsafe_allow_html=True)
+        st.info("Owner: **Almas Shaikh**")
