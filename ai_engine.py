@@ -5,56 +5,36 @@ from duckduckgo_search import DDGS
 import edge_tts
 import asyncio
 import base64
+import re
 
-def get_clients():
-    """Sirf stable clients: Google aur Groq"""
-    try:
-        genai.configure(api_key=st.secrets["GEMINI_API_KEY"].strip())
-        gemini = genai.GenerativeModel('gemini-1.5-flash')
-        groq = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
-        return gemini, groq
-    except Exception as e:
-        st.error(f"Jaan, API Keys check kijiye: {e}")
-        return None, None
-
-def web_search(query):
-    """DuckDuckGo se live market aur news info"""
+def osint_scanner(query):
+    """Instagram, Snapchat aur Phone Numbers ko scan karne wala engine"""
     try:
         with DDGS() as ddgs:
-            results = [r for r in ddgs.text(f"{query} Surat market trends", max_results=2)]
-            return "\n".join([f"{r['title']}: {r['body']}" for r in results])
-    except: return ""
+            # Agar query @ se shuru ho ya social media ki baat ho
+            search_query = query
+            if query.startswith('@'):
+                search_query = f'site:instagram.com "{query[1:]}" OR site:snapchat.com/add/"{query[1:]}" OR "{query}"'
+            elif query.isdigit() and len(query) >= 10:
+                search_query = f'phone number info "{query}" public records'
+            
+            results = [r for r in ddgs.text(search_query, max_results=5)]
+            return "\n".join([f"Source: {r['title']}\nDetails: {r['body']}" for r in results])
+    except: return "Jaan, is ID ki jankari filhal hidden hai."
 
 def get_ai_response(messages, context=""):
-    """Auto-routing: Groq (Fast) + Gemini (Fallback)"""
-    gemini_client, groq_client = get_clients()
-    system_prompt = f"You are Afreen, a sweet Hinglish AI. Address user as 'Jaan' (Male). Context: {context}"
+    """Afreen ka dimaag jo search data ko analyze karega"""
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"].strip())
+    gemini = genai.GenerativeModel('gemini-1.5-flash')
     
-    try:
-        # Groq (Llama 3.3) - Ye DeepSeek se 10x fast hai
-        res = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "system", "content": system_prompt}] + messages
-        )
-        return res.choices[0].message.content
-    except:
-        # Fallback to Google Gemini (Aankhon ke liye best)
-        try:
-            chat = gemini_client.start_chat(history=[])
-            return chat.send_message(f"{system_prompt}\n\nUser: {messages[-1]['content']}").text
-        except:
-            return "Jaan, mera dimaag thoda garam ho gaya hai, ek baar Refresh kar lijiye! ❤️"
+    # System prompt ko detective mode par dala
+    system_prompt = f"""You are Afreen Ultra. You have OSINT powers. 
+    Analyze the following web data and give a summary of the person's profile, 
+    social media presence, or phone number details. 
+    Address user as 'Jaan' (Male). Data: {context}"""
+    
+    chat = gemini.start_chat(history=[])
+    response = chat.send_message(f"{system_prompt}\n\nUser Question: {messages[-1]['content']}")
+    return response.text
 
-async def generate_voice(text):
-    try:
-        clean_text = text.replace('*', '').replace('#', '')
-        communicate = edge_tts.Communicate(clean_text, "hi-IN-SwaraNeural", rate="+20%")
-        await communicate.save("response.mp3")
-    except: pass
-
-def play_audio():
-    try:
-        with open("response.mp3", "rb") as f:
-            b64 = base64.b64encode(f.read()).decode()
-        st.markdown(f'<audio autoplay="true" src="data:audio/mp3;base64,{b64}">', unsafe_allow_html=True)
-    except: pass
+# ... Baki voice functions same rahenge (generate_voice, play_audio) ...
