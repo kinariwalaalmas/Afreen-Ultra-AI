@@ -1,10 +1,6 @@
 streamlit
-google-generativeai
 groq
-openai
-anthropic
-yfinance
+google-generativeai
+duckduckgo-search
 edge-tts
 streamlit-mic-recorder
-Pillow
-duckduckgo-search
