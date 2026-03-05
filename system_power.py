@@ -1,21 +1,36 @@
 import streamlit as st
-import edge_tts
-import base64
+import asyncio
+from edge_tts import Communicate
 import os
-from streamlit_autorefresh import st_autorefresh
+import base64
 
 def keep_alive_power():
-    """Foreground Trick to keep app active"""
-    st_autorefresh(interval=30000, key="afreen_heartbeat")
+    """App ko active rakhne ke liye chhota sa logic"""
+    if "alive_count" not in st.session_state:
+        st.session_state.alive_count = 0
+    st.session_state.alive_count += 1
 
 async def voice_power(text):
-    """Natural Swara Voice Generation"""
-    clean = text.replace('*', '').replace('#', '')
-    communicate = edge_tts.Communicate(clean, "hi-IN-SwaraNeural", rate="+20%")
-    await communicate.save("response.mp3")
+    """Afreen ki awaaz generate karne ke liye"""
+    try:
+        # Female voice select karna
+        voice = "hi-IN-SwaraNeural" 
+        communicate = Communicate(text, voice)
+        await communicate.save("speech.mp3")
+    except Exception as e:
+        print(f"Voice Error: {e}")
 
 def audio_player():
-    if os.path.exists("response.mp3"):
-        with open("response.mp3", "rb") as f:
-            b64 = base64.b64encode(f.read()).decode()
-            st.markdown(f'<audio autoplay="true" src="data:audio/mp3;base64,{b64}">', unsafe_allow_html=True)
+    """Audio file ko auto-play karne ke liye"""
+    if os.path.exists("speech.mp3"):
+        with open("speech.mp3", "rb") as f:
+            data = f.read()
+            b64 = base64.b64encode(data).decode()
+            md = f"""
+                <audio autoplay="true">
+                <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
+                </audio>
+                """
+            st.markdown(md, unsafe_allow_html=True)
+        # Bajne ke baad file delete karna taaki repeat na ho
+        os.remove("speech.mp3")
