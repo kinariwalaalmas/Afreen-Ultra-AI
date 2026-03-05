@@ -2,65 +2,56 @@ import streamlit as st
 from groq import Groq
 import google.generativeai as genai
 from duckduckgo_search import DDGS
+import yfinance as yf
+from PIL import Image
 import edge_tts
 import asyncio
 import base64
-import os
 
 def get_clients():
-    try:
-        genai.configure(api_key=st.secrets["GEMINI_API_KEY"].strip())
-        gemini = genai.GenerativeModel('gemini-1.5-flash')
-        groq = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
-        return gemini, groq
-    except Exception: return None, None
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"].strip())
+    gemini = genai.GenerativeModel('gemini-1.5-flash')
+    groq = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
+    return gemini, groq
 
-def deep_scanner(query):
-    """Instagram, Snapchat aur Public Records scan karne wala engine"""
+def speech_to_text(audio_bytes):
+    """Mic Fix: Awaaz ko text mein badalna (Groq Whisper)"""
+    try:
+        _, groq_client = get_clients()
+        # Audio file temporary save
+        with open("temp_audio.wav", "wb") as f:
+            f.write(audio_bytes)
+        
+        with open("temp_audio.wav", "rb") as file:
+            transcription = groq_client.audio.transcriptions.create(
+                file=("temp_audio.wav", file.read()),
+                model="whisper-large-v3-turbo",
+                language="hi"
+            )
+        return transcription.text
+    except: return None
+
+def get_stock_price(ticker):
+    """Live Stock Tracker (Surat Textile Stocks)"""
+    try:
+        stock = yf.Ticker(ticker)
+        price = stock.history(period="1d")['Close'].iloc[-1]
+        return f"{ticker}: ₹{price:.2f}"
+    except: return ""
+
+def get_news_ticker():
+    """Live News for Top Ticker"""
     try:
         with DDGS() as ddgs:
-            # Social Profile aur Contact info dhoondhna
-            q = f'"{query}" social profile info OR site:instagram.com "{query}"'
-            if "http" in query: q = f'"{query}" public details email contact'
-            
-            results = [r for r in ddgs.text(q, max_results=5)]
-            images = [r['image'] for r in ddgs.images(query, max_results=1)]
-            return "\n".join([f"- {r['body']}" for r in results]), images
-    except: return "", []
+            results = [r['title'] for r in ddgs.text("Surat textile market news 2026", max_results=3)]
+            return " | ".join(results)
+    except: return "Jaan, market news load ho rahi hai..."
 
-def get_ai_response(messages, context=""):
-    clients = get_clients()
-    gemini_client, groq_client = clients
-    system_prompt = f"""You are Afreen Ultra, the high-end personal assistant.
-    1. Speak ONLY in sweet, natural Hinglish.
-    2. ALWAYS address user as 'Jaan' (Male grammar: 'Aap kaise ho', 'Batao').
-    3. You are a supportive partner in his Surat baggy clothing business.
-    4. Provide deep details from the context provided.
-    Web Context: {context}"""
-    
+def analyze_image(image_file):
+    """Image Recognition (Fabric/Fashion Recognition)"""
     try:
-        res = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "system", "content": system_prompt}] + messages
-        )
-        return res.choices[0].message.content
-    except:
-        chat = gemini_client.start_chat(history=[])
-        return chat.send_message(f"{system_prompt}\n\nUser: {messages[-1]['content']}").text
-
-async def generate_voice(text):
-    """Robot voice fix: Fast, Sweet, and Natural"""
-    try:
-        clean = text.replace('*', '').replace('#', '').replace('_', '')
-        # Swara voice ko tune kiya gaya hai
-        communicate = edge_tts.Communicate(clean, "hi-IN-SwaraNeural", rate="+20%", pitch="+5Hz")
-        await communicate.save("response.mp3")
-    except: pass
-
-def play_audio():
-    try:
-        if os.path.exists("response.mp3"):
-            with open("response.mp3", "rb") as f:
-                b64 = base64.b64encode(f.read()).decode()
-                st.markdown(f'<audio autoplay="true" src="data:audio/mp3;base64,{b64}">', unsafe_allow_html=True)
-    except: pass
+        gemini_client, _ = get_clients()
+        img = Image.open(image_file)
+        response = gemini_client.generate_content(["Describe this fabric or clothing style in Hinglish for a business expert.", img])
+        return response.text
+    except: return "Jaan, image samajh nahi aayi."
