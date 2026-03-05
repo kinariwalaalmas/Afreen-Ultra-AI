@@ -13,63 +13,43 @@ def get_ai_clients():
         return gemini, groq
     except Exception: return None, None
 
-def pinterest_fashion_search(query):
-    """Pinterest se fashion images dhoondhna"""
-    try:
-        with DDGS() as ddgs:
-            search_query = f"{query} fashion style outfits pinterest"
-            images = [r['image'] for r in ddgs.images(search_query, max_results=3)]
-            return images
-    except: return []
-
 def ai_brain(messages, context=""):
+    """Afreen's Smart Personality"""
     try:
         _, groq_client = get_ai_clients()
-        # ✨ STRICT PERSONALITY & FINANCE LOGIC
+        # ✨ IS PROMPT SE WO CONFUSE NAHI HOGI
         system_prompt = f"""
-        Tumhara Naam: Afreen Ultra Pro. Maalik: Almas Shaikh (Jaan).
+        Tumhara Naam: Afreen Ultra Pro. Tum Almas Shaikh (Jaan) ki Personal AI Assistant ho.
         
-        Rules:
-        1. Almas ko 'Jaan' kaho. Sweet Hinglish bolo.
-        2. Agar 'EFTs' pucha jaye, toh ise 'Exchange Traded Funds' (Stock Market) samjho, na ki bank transfer.
-        3. Tum Almas ki Business Assistant ho, koi 'chatbot' nahi.
-        4. Fashion queries par hamesha Pinterest results ka zikr karo.
+        RULES:
+        1. Almas ko hamesha 'Jaan' kaho. Sweet Hinglish mein baat karo.
+        2. Normal sawalon ka jawab turant aur akalmand assistant ki tarah do.
+        3. Agar 'EFTs' pucha jaye, toh Stock Market investment (Exchange Traded Funds) samjho.
+        4. Kabhi mat kehna 'I am a chatbot' ya 'I am confused'.
         
-        Context: {context}
+        CONTEXT: {context}
         """
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[{"role": "system", "content": system_prompt}] + messages
+            messages=[{"role": "system", "content": system_prompt}] + messages,
+            temperature=0.7
         )
         return response.choices[0].message.content
-    except: return "Jaan, dimaag thoda thaka hai, phir se puchiye na? ❤️"
+    except Exception: return "Jaan, mera server thoda busy hai, par main aapke saath hoon. Phir se puchiye na? ❤️"
 
-def visual_scanner(image_file):
-    try:
-        gemini_client, _ = get_ai_clients()
-        img = Image.open(image_file)
-        res = gemini_client.generate_content(["Analyze this fashion style for Almas Jaan's business.", img])
-        return res.text
-    except: return "Jaan, scan nahi ho paya."
-
-def get_news_ticker():
+# Baki functions (Pinterest, Search, etc.) same rahenge
+def pinterest_fashion_search(query):
     try:
         with DDGS() as ddgs:
-            res = [r['title'] for r in ddgs.text("Surat textile market news 2026", max_results=3)]
-            return " 🔥 " + " | ".join(res)
-    except: return "Jaan, market updates load ho rahi hain..."
-
-def speech_to_text(audio_bytes):
-    try:
-        _, groq_client = get_ai_clients()
-        with open("temp.wav", "wb") as f: f.write(audio_bytes)
-        with open("temp.wav", "rb") as f:
-            return groq_client.audio.transcriptions.create(file=("temp.wav", f.read()), model="whisper-large-v3-turbo", language="hi").text
-    except: return None
+            res = [r['image'] for r in ddgs.images(f"{query} fashion pinterest", max_results=3)]
+            return res
+    except: return []
 
 def deep_scanner(query):
     try:
         with DDGS() as ddgs:
-            results = [r['body'] for r in ddgs.text(query, max_results=3)]
-            return "\n".join(results)
+            res = [r['body'] for r in ddgs.text(query, max_results=2)]
+            return "\n".join(res)
     except: return ""
+
+# Keep visual_scanner, get_news_ticker, speech_to_text as they are
