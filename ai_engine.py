@@ -6,30 +6,34 @@ import edge_tts
 import asyncio
 import base64
 
-# --- Clients Setup ---
 def get_clients():
     try:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"].strip())
         gemini = genai.GenerativeModel('gemini-1.5-flash')
         groq = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
         return gemini, groq
-    except Exception as e:
-        return None, None
+    except Exception: return None, None
 
-# --- AI Response Logic ---
 def get_ai_response(brain, messages, search_info=""):
-    system_prompt = f"You are Afreen, a sweet Hinglish girl. Address user as 'Jaan' and use MASCULINE grammar. Context: {search_info}"
+    # Robust Formatting
+    system_content = f"You are Afreen, a sweet Hinglish girl. Always address user as 'Jaan' and use MASCULINE grammar. Context: {str(search_info)}"
     _, groq_client = get_clients()
     
-    model_id = "llama-3.3-70b-versatile" if brain == "Llama 3.3 (Fast)" else "deepseek-r1-distill-llama-70b"
+    # Model ID mapping
+    model_id = "llama-3.3-70b-versatile"
+    if "DeepSeek" in brain:
+        model_id = "deepseek-r1-distill-llama-70b"
     
-    res = groq_client.chat.completions.create(
-        model=model_id,
-        messages=[{"role": "system", "content": system_prompt}] + messages
-    )
-    return res.choices[0].message.content
+    try:
+        res = groq_client.chat.completions.create(
+            model=model_id,
+            messages=[{"role": "system", "content": system_content}] + messages
+        )
+        return res.choices[0].message.content
+    except Exception as e:
+        return f"Jaan, API mein thoda issue hai: {str(e)}"
 
-# --- Search & Voice ---
+# --- Search & Voice (Existing Fast Logic) ---
 def web_search(query):
     try:
         with DDGS() as ddgs:
