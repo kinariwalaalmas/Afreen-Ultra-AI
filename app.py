@@ -3,13 +3,14 @@ import asyncio
 from ui_components import render_plus_menu, render_sidebar
 from ai_engine import deep_scanner, get_ai_response, generate_voice, play_audio
 
-st.set_page_config(page_title="Afreen Pro", layout="wide")
+st.set_page_config(page_title="Afreen Ultra", layout="wide")
 render_sidebar()
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-st.title("👸 Afreen Ultra")
+st.title("👸 Afreen Pro")
+# UI components update
 id_input, scan_btn, audio, photo = render_plus_menu()
 
 user_msg = st.chat_input("Jaan, puchiye...") or (id_input if scan_btn else None)
@@ -28,5 +29,8 @@ if user_msg:
         st.session_state.messages.append({"role": "assistant", "content": ans})
         with st.chat_message("assistant"): st.write(ans)
         
-        asyncio.run(generate_voice(ans))
-        play_audio()
+        # Voice generation logic
+        try:
+            asyncio.run(generate_voice(ans))
+            play_audio()
+        except: pass
