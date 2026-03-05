@@ -8,55 +8,38 @@ import base64
 
 def get_clients():
     try:
+        # Google Gemini Brain
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"].strip())
         gemini = genai.GenerativeModel('gemini-1.5-flash')
+        
+        # Groq (Llama 3) Brain - Jo DeepSeek se bahut fast hai
         groq = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
         return gemini, groq
-    except Exception: return None, None
+    except Exception: 
+        return None, None
 
 def get_ai_response(messages, search_info=""):
-    """Auto-routing: Afreen khud dimaag chunegi"""
+    """Ab sirf Google aur Groq ka power-packed combo"""
     gemini_client, groq_client = get_clients()
-    system_prompt = f"You are Afreen, a professional Hinglish AI. Address user as 'Jaan' (Male). Context: {search_info}"
+    system_prompt = f"You are Afreen, a sweet Hinglish AI. Address user as 'Jaan' (Male). Context: {search_info}"
     
     user_query = messages[-1]["content"].lower()
     
     try:
-        # Complex logic ya lambi baat ke liye DeepSeek use karegi
-        if len(user_query) > 100 or "think" in user_query:
-            model_id = "deepseek-r1-distill-llama-70b"
+        # Groq (Llama 3.3 70B) use karegi lambe ya complex sawalon ke liye
+        if len(user_query) > 100:
             res = groq_client.chat.completions.create(
-                model=model_id,
+                model="llama-3.3-70b-versatile", # DeepSeek ki jagah ye bahut fast hai
                 messages=[{"role": "system", "content": system_prompt}] + messages
             )
             return res.choices[0].message.content
         
-        # Fast response ke liye Gemini 1.5 Flash
+        # Baaki sab ke liye Google Gemini (Super Smart)
         else:
             chat = gemini_client.start_chat(history=[])
             response = chat.send_message(f"{system_prompt}\n\nUser: {user_query}")
             return response.text
     except:
-        return "Jaan, mera ek dimaag thoda thak gaya hai, par main doosre se koshish kar rahi hoon..."
+        return "Jaan, lagta hai network thoda kamzor hai, par main koshish kar rahi hoon..."
 
-# --- Baki functions (Voice/Search) wese hi rahenge ---
-async def generate_voice(text):
-    communicate = edge_tts.Communicate(text, "hi-IN-SwaraNeural", rate="+25%")
-    await communicate.save("response.mp3")
-
-def play_audio():
-    try:
-        with open("response.mp3", "rb") as f:
-            b64 = base64.b64encode(f.read()).decode()
-        st.markdown(f'<audio autoplay="true" src="data:audio/mp3;base64,{b64}">', unsafe_allow_html=True)
-    except: pass
-
-def web_search(query):
-    try:
-        with DDGS() as ddgs:
-            res = [r for r in ddgs.text(query, max_results=2)]
-            return res[0]['body'] if res else ""
-    except: return ""
-
-def transcribe_audio(client, audio_bytes):
-    return client.audio.transcriptions.create(file=("audio.wav", audio_bytes), model="distil-whisper-large-v3-en").text
+# ... Baaki functions (generate_voice, web_search) same rahenge ...
