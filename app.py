@@ -97,7 +97,7 @@ if input_q and input_q != st.session_state.last_processed:
             st.session_state.messages.append({"role": "user", "content": "Scanning Fashion Photo...", "image": tool_img})
         
         # CATEGORY 2: Smart Search & URL Logic
-        elif "SEARCH_ID_DATA" in input_q or "URL_ANALYZE" in input_q:
+        elif "SEARCH_ID_DATA" in input_q or "URL_ANALYZE" in input_q or "http" in input_q.lower():
             context = deep_scanner(input_q)
             ans = ai_brain(st.session_state.messages, context)
             st.session_state.messages.append({"role": "user", "content": input_q})
