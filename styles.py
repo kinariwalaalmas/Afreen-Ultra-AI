@@ -1,62 +1,102 @@
 import streamlit as st
 
 def apply_styles():
-    # --- SCREEN WAKE LOCK (Taaki phone soye nahi) ---
+    # --- SCREEN WAKE LOCK (Phone ko sone nahi dega) ---
     st.markdown("<script>if('wakeLock' in navigator){navigator.wakeLock.request('screen');}</script>", unsafe_allow_html=True)
 
-    # --- PREMIUM "SAPPHIRE & GOLD" THEME ---
+    # --- "GEMINI STYLE" CLEAN LIGHT THEME ---
     st.markdown("""
         <style>
-        /* Main Background - Deep Sapphire Blue */
+        /* 1. Main Background - Clean White */
         .stApp {
-            background: linear-gradient(135deg, #0a192f 0%, #112240 100%);
-            color: #e6f1ff; /* Bright readable text */
-            font-family: 'Helvetica Neue', sans-serif;
+            background-color: #ffffff; /* Pure white */
+            color: #212529; /* Dark grey text for best readability */
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
         }
 
-        /* Sidebar Look */
+        /* 2. Sidebar - Slightly off-white to separate */
         [data-testid="stSidebar"] {
-            background: #0a192f !important;
-            border-right: 1px solid rgba(255, 215, 0, 0.2);
+            background-color: #f8f9fa; /* Very light grey */
+            border-right: 1px solid #dee2e6;
         }
 
-        /* Chat Bubbles (Clean & Professional) */
+        /* Bold Titles like Gemini */
+        h1, h2, h3 {
+            color: #1a73e8 !important; /* Google-like blue for headers */
+            font-weight: 700 !important; /* Extra Bold */
+        }
+
+        /* 3. Chat Bubbles - Distinct & Clean */
         .stChatMessage {
-            background: rgba(23, 42, 69, 0.8) !important;
-            border: 1px solid rgba(100, 255, 218, 0.1) !important;
-            border-radius: 15px !important;
-            color: #ffffff !important;
-            margin-bottom: 15px;
+            padding: 1rem;
+            border-radius: 18px !important;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Subtle shadow */
         }
-        
-        /* User Bubble (Jaan's Message) */
+
+        /* Assistant (Afreen) Bubble - Light Grey */
+        .stChatMessage[data-testid="assistant-message"] {
+            background-color: #f1f3f5 !important;
+            border: 1px solid #dee2e6 !important;
+            color: #212529 !important;
+        }
+
+        /* User (Jaan) Bubble - Light Blue Accent */
         .stChatMessage[data-testid="user-message"] {
-            border: 1px solid gold !important;
-            background: rgba(10, 25, 47, 0.9) !important;
+            background-color: #e3f2fd !important; /* Light blue tint */
+            border: none !important;
+            color: #0d47a1 !important; /* Darker blue text */
         }
 
-        /* Action Cards (Premium Gold Borders) */
+        /* 4. Action Cards (Quick Links) */
         .action-card {
-            background: rgba(23, 42, 69, 0.6);
-            border: 2px solid #ffd700;
+            background-color: #ffffff;
+            border: 1px solid #dfe1e5;
             border-radius: 12px;
-            padding: 20px;
+            padding: 15px;
             text-align: center;
-            color: #ffd700;
-            font-weight: bold;
-            transition: 0.3s;
+            color: #3c4043;
+            font-weight: 600;
+            box-shadow: 0 1px 3px rgba(60,64,67,0.3);
+            transition: all 0.2s ease-in-out;
         }
-        .action-card:hover { 
-            background: #ffd700; 
-            color: #0a192f; 
-            transform: translateY(-5px); 
+        .action-card:hover {
+            background-color: #f1f3f5;
+            border-color: #1a73e8;
+            transform: translateY(-3px);
         }
 
-        /* Input Bar */
+        /* 5. Floating Plus Button (Pop of Color) */
+        div[data-testid="stPopover"] > button {
+            /* Blue to Green Gradient like Google */
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%) !important;
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 10px rgba(66,133,244,0.3) !important;
+            width: 55px !important; height: 55px !important;
+        }
+
+        /* 6. Chat Input Box - Clean white shadow */
         .stChatInputContainer > div {
-            background-color: #172a45 !important;
-            border: 1px solid #ffd700 !important;
-            border-radius: 25px !important;
+            background-color: #ffffff !important;
+            border: 1px solid #dfe1e5 !important;
+            border-radius: 24px !important;
+            box-shadow: 0 1px 6px rgba(32,33,36,0.28) !important;
+        }
+        .stChatInputContainer textarea {
+            color: #212529 !important; /* Dark Input text */
+        }
+
+        /* Code Blocks styling (Dark block for contrast) */
+        code {
+            color: #d63384; /* Pinkish hue for inline code */
+            background-color: #f8f9fa;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .stCodeBlock {
+            border-radius: 10px !important;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         </style>
     """, unsafe_allow_html=True)
