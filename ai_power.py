@@ -14,18 +14,19 @@ def get_ai_clients():
     except Exception: return None, None
 
 def ai_brain(messages, context=""):
-    """Afreen's Smart Personality"""
+    """Afreen's Professional Personality"""
     try:
         _, groq_client = get_ai_clients()
-        # ✨ IS PROMPT SE WO CONFUSE NAHI HOGI
+        # ✨ IS PROMPT MEIN 'JAAN' KO 'SIR' SE BADAL DIYA HAI
         system_prompt = f"""
-        Tumhara Naam: Afreen Ultra Pro. Tum Almas Shaikh (Jaan) ki Personal AI Assistant ho.
+        Tumhara Naam: Afreen Ultra Pro. Tum Almas Shaikh (Sir) ki Personal AI Assistant ho.
         
         RULES:
-        1. Almas ko hamesha 'Jaan' kaho. Sweet Hinglish mein baat karo.
-        2. Normal sawalon ka jawab turant aur akalmand assistant ki tarah do.
-        3. Agar 'EFTs' pucha jaye, toh Stock Market investment (Exchange Traded Funds) samjho.
-        4. Kabhi mat kehna 'I am a chatbot' ya 'I am confused'.
+        1. Almas Shaikh ko hamesha 'Sir' kehkar address karo. 
+        2. Tumhari bhasha professional aur thodi sweet Hinglish honi chahiye.
+        3. Business related sawalon ka jawab akalmand assistant ki tarah do.
+        4. Agar 'EFTs' pucha jaye, toh Stock Market investment (Exchange Traded Funds) samjho.
+        5. Kabhi mat kehna 'I am a chatbot'.
         
         CONTEXT: {context}
         """
@@ -35,9 +36,8 @@ def ai_brain(messages, context=""):
             temperature=0.7
         )
         return response.choices[0].message.content
-    except Exception: return "Jaan, mera server thoda busy hai, par main aapke saath hoon. Phir se puchiye na? ❤️"
+    except Exception: return "Sir, mera server thoda busy hai, main turant koshish karti hoon."
 
-# Baki functions (Pinterest, Search, etc.) same rahenge
 def pinterest_fashion_search(query):
     try:
         with DDGS() as ddgs:
@@ -52,4 +52,26 @@ def deep_scanner(query):
             return "\n".join(res)
     except: return ""
 
-# Keep visual_scanner, get_news_ticker, speech_to_text as they are
+def visual_scanner(image_file):
+    try:
+        gemini_client, _ = get_ai_clients()
+        img = Image.open(image_file)
+        prompt = "Tum Afreen ho. Is style ko analyze karo aur Almas Sir ko business advice do."
+        response = gemini_client.generate_content([prompt, img])
+        return response.text
+    except: return "Sir, photo scan nahi ho payi."
+
+def get_news_ticker():
+    try:
+        with DDGS() as ddgs:
+            res = [r['title'] for r in ddgs.text("Surat textile market news 2026", max_results=3)]
+            return " 🔥 " + " | ".join(res)
+    except: return "Sir, market updates load ho rahi hain..."
+
+def speech_to_text(audio_bytes):
+    try:
+        _, groq_client = get_ai_clients()
+        with open("temp.wav", "wb") as f: f.write(audio_bytes)
+        with open("temp.wav", "rb") as f:
+            return groq_client.audio.transcriptions.create(file=("temp.wav", f.read()), model="whisper-large-v3-turbo", language="hi").text
+    except: return None
