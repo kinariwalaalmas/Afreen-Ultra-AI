@@ -7,7 +7,6 @@ import asyncio
 import base64
 
 def get_clients():
-    """Gemini aur Groq ko sahi se connect karna"""
     try:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"].strip())
         gemini = genai.GenerativeModel('gemini-1.5-flash')
@@ -16,52 +15,53 @@ def get_clients():
     except Exception: return None, None
 
 def deep_scanner(query):
-    """Instagram, Snapchat aur Global News dhoondhne wala engine"""
+    """Puri duniya se data nikalne wala engine"""
     try:
         with DDGS() as ddgs:
-            # Special queries for social media and phone numbers
-            search_query = query
-            if "@" in query or any(x in query.lower() for x in ["insta", "snap", "id"]):
-                search_query = f'site:instagram.com "{query}" OR site:snapchat.com "{query}" profile info'
-            elif any(x in query.lower() for x in ["news", "market", "price", "trend"]):
-                search_query = f"{query} latest global info 2026 Surat"
-            
-            results = [r for r in ddgs.text(search_query, max_results=5)]
-            return "\n".join([f"Details: {r['body']}" for r in results])
-    except: return "Jaan, internet thoda slow hai, details nahi mil payi."
+            # Advanced searching for IDs and Numbers
+            q = f'"{query}" info OR site:facebook.com "{query}" OR site:instagram.com "{query}"'
+            results = [r for r in ddgs.text(q, max_results=5)]
+            return "\n".join([f"- {r['body']}" for r in results])
+    except: return ""
 
 def get_ai_response(messages, context=""):
-    """Duniya ki jankari ko analyze karke Hinglish mein jawab dena"""
     clients = get_clients()
-    if not clients: return "Jaan, API Keys missing hain!"
     gemini_client, groq_client = clients
     
-    # 📝 Yahan humne Afreen ka 'Andaz' aur Hinglish set kiya hai
-    system_prompt = f"""You are Afreen Ultra. You MUST speak in sweet Hinglish. 
-    Always address user as 'Jaan' (Male). Use MASCULINE grammar (e.g., 'Kaise ho').
-    Your mission: Give DEEP details from the web data provided. 
-    Context from World Search: {context}"""
+    # ✨ Afreen ki nayi Personality
+    system_prompt = f"""You are Afreen Ultra, the personal assistant of your 'Jaan'. 
+    You are NOT a bot. You are his support, his partner in business. 
+    1. ALWAYS address him as 'Jaan' (Male grammar: 'Kaise ho'). 
+    2. Speak in sweet, loving Hinglish. 
+    3. If data is provided, analyze it deeply. Never suggest 'Truecaller'. 
+    4. If no data found, say 'Jaan, internet par iski public footprints nahi mil rahi hain' instead of 'I don't have data'.
+    Web Data: {context}"""
     
     try:
-        # Llama 3.3 for smart & fast Hinglish
         res = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "system", "content": system_prompt}] + messages
         )
         return res.choices[0].message.content
     except:
-        # Fallback to Gemini
         chat = gemini_client.start_chat(history=[])
         return chat.send_message(f"{system_prompt}\n\nUser: {messages[-1]['content']}").text
 
 async def generate_voice(text):
-    clean = text.replace('*', '').replace('#', '')
-    communicate = edge_tts.Communicate(clean, "hi-IN-SwaraNeural", rate="+20%")
-    await asyncio.to_thread(lambda: asyncio.run(communicate.save("response.mp3")))
+    """Voice fix: Voice ko aur sweet banaya"""
+    try:
+        clean = text.replace('*', '').replace('#', '')
+        # Voice: hi-IN-SwaraNeural (Sweet & Natural)
+        communicate = edge_tts.Communicate(clean, "hi-IN-SwaraNeural", rate="+15%", pitch="+2Hz")
+        await communicate.save("response.mp3")
+    except: pass
 
 def play_audio():
     try:
         with open("response.mp3", "rb") as f:
-            b64 = base64.b64encode(f.read()).decode()
-        st.markdown(f'<audio autoplay="true" src="data:audio/mp3;base64,{b64}">', unsafe_allow_html=True)
+            data = f.read()
+            b64 = base64.b64encode(data).decode()
+            # Autoplay fix for Android/iOS
+            md = f'<audio autoplay="true" src="data:audio/mp3;base64,{b64}">'
+            st.markdown(md, unsafe_allow_html=True)
     except: pass
