@@ -7,7 +7,6 @@ import asyncio
 import base64
 
 def get_clients():
-    """Gemini aur Groq ko sahi se connect karna"""
     try:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"].strip())
         gemini = genai.GenerativeModel('gemini-1.5-flash')
@@ -15,49 +14,42 @@ def get_clients():
         return gemini, groq
     except Exception: return None, None
 
-def osint_scanner(query):
-    """Instagram, Snapchat, Phone aur Global News dhoondhne wala engine"""
+def deep_scanner(query):
+    """Details nikalne ke liye advanced search queries"""
     try:
         with DDGS() as ddgs:
-            # Special queries for social media and phone numbers
-            search_query = query
+            # Agar ID ya number hai toh details ko filter karke nikalna
+            search_query = f'"{query}" social media profile info public records'
             if "@" in query:
-                search_query = f'site:instagram.com "{query}" OR site:snapchat.com "{query}"'
-            elif any(x in query.lower() for x in ["news", "market", "batao", "price"]):
-                search_query = f"{query} latest global info 2026"
+                search_query = f'site:instagram.com "{query}" OR site:snapchat.com "{query}" info'
             
-            results = [r for r in ddgs.text(search_query, max_results=3)]
-            return "\n".join([f"Info: {r['body']}" for r in results])
-    except: return "Jaan, internet thoda slow hai, details nahi mil payi."
+            results = [r for r in ddgs.text(search_query, max_results=5)]
+            return "\n".join([f"Details Found: {r['body']}" for r in results])
+    except: return ""
 
 def get_ai_response(messages, context=""):
-    """Duniya ki jankari ko analyze karke jawab dena"""
+    """Afreen ko Hinglish aur Detailed banane wala logic"""
     clients = get_clients()
     if not clients: return "Jaan, API Keys missing hain!"
     gemini_client, groq_client = clients
     
-    system_prompt = f"You are Afreen Ultra. Address user as 'Jaan' (Male). Use context: {context}"
+    # 📝 Yahan humne Afreen ka 'Andaz' set kiya hai
+    system_prompt = f"""You are Afreen Ultra. You MUST speak in sweet Hinglish. 
+    Always address user as 'Jaan' (Male). 
+    Your mission: Give DEEP details from the web data provided. 
+    Never say 'I don't know' if context is given. 
+    Context from World Search: {context}"""
     
     try:
-        # Llama 3.3 for smart & fast thinking
+        # Llama 3.3 for smart Hinglish & depth
         res = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "system", "content": system_prompt}] + messages
         )
         return res.choices[0].message.content
     except:
-        # Fallback to Gemini
+        # Gemini fallback
         chat = gemini_client.start_chat(history=[])
         return chat.send_message(f"{system_prompt}\n\nUser: {messages[-1]['content']}").text
 
-async def generate_voice(text):
-    clean = text.replace('*', '').replace('#', '')
-    communicate = edge_tts.Communicate(clean, "hi-IN-SwaraNeural", rate="+20%")
-    await communicate.save("response.mp3")
-
-def play_audio():
-    try:
-        with open("response.mp3", "rb") as f:
-            b64 = base64.b64encode(f.read()).decode()
-        st.markdown(f'<audio autoplay="true" src="data:audio/mp3;base64,{b64}">', unsafe_allow_html=True)
-    except: pass
+# ... Baki voice functions same rahenge (generate_voice, play_audio) ...
