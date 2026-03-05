@@ -14,26 +14,25 @@ def get_ai_clients():
     except Exception: return None, None
 
 def ai_brain(messages, context=""):
-    """Afreen's Professional Personality"""
+    """Afreen's Smart Assistant Identity"""
     try:
         _, groq_client = get_ai_clients()
-        # ✨ IS PROMPT MEIN 'JAAN' KO 'SIR' SE BADAL DIYA HAI
+        # ✨ STRICT IDENTITY: Sir address and Professional Tone
         system_prompt = f"""
-        Tumhara Naam: Afreen Ultra Pro. Tum Almas Shaikh (Sir) ki Personal AI Assistant ho.
+        Tumhara Naam: Afreen Ultra Pro. Tum Almas Shaikh (Sir) ki Personal Assistant ho.
         
         RULES:
-        1. Almas Shaikh ko hamesha 'Sir' kehkar address karo. 
-        2. Tumhari bhasha professional aur thodi sweet Hinglish honi chahiye.
-        3. Business related sawalon ka jawab akalmand assistant ki tarah do.
-        4. Agar 'EFTs' pucha jaye, toh Stock Market investment (Exchange Traded Funds) samjho.
-        5. Kabhi mat kehna 'I am a chatbot'.
+        1. Almas ko hamesha 'Sir' kehkar address karo. Sweet Hinglish bolo.
+        2. Agar 'EFTs' pucha jaye, toh Stock Market investment (Exchange Traded Funds) samjho.
+        3. Normal sawalon ka jawab akalmand assistant ki tarah turant do.
+        4. Kabhi mat kehna 'I am a chatbot' ya 'I am confused'.
         
         CONTEXT: {context}
         """
+        # Sirf aakhri 5 messages bhejna taaki confusion na ho
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[{"role": "system", "content": system_prompt}] + messages,
-            temperature=0.7
+            messages=[{"role": "system", "content": system_prompt}] + messages[-5:]
         )
         return response.choices[0].message.content
     except Exception: return "Sir, mera server thoda busy hai, main turant koshish karti hoon."
