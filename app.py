@@ -1,8 +1,8 @@
 import streamlit as st
 import asyncio
 
-# 1. Config & Share Fix
-st.set_page_config(page_title="Afreen Pro", layout="wide", menu_items={'About': "Created by Almas Shaikh"})
+# 1. Page Config
+st.set_page_config(page_title="Afreen Pro", layout="wide")
 
 from ui_power import apply_ui_power, render_sidebar_power
 from ai_power import ai_brain, visual_scanner, get_news_ticker, speech_to_text, deep_scanner, pinterest_fashion_search
@@ -12,16 +12,17 @@ apply_ui_power()
 render_sidebar_power()
 keep_alive_power()
 
-# --- 🛠️ SESSION LOGIC ---
+# --- 🛠️ ADVANCED LOOP PREVENTER ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
-    # Auto Greeting
-    greet = "Hey Almas Jaan, main Afreen hoon. Aaj business kaisa hai?"
+    # Sirf pehli baar swagat
+    greet = "Hey Almas Jaan, main Afreen hoon. Aaj kya help karu?"
     st.session_state.messages.append({"role": "assistant", "content": greet})
     asyncio.run(voice_power(greet))
 
-# --- 🎙️ AUTO-READY MIC ---
-st.components.v1.html("<script>navigator.mediaDevices.getUserMedia({audio:true});</script>", height=0)
+# Pichli query ko yaad rakhne ke liye taaki repeat na ho
+if "last_processed" not in st.session_state:
+    st.session_state.last_processed = None
 
 # --- UI ---
 st.markdown(f"<div class='ticker-wrap'>📢 {get_news_ticker()}</div>", unsafe_allow_html=True)
@@ -40,40 +41,44 @@ st.markdown("---")
 from streamlit_mic_recorder import mic_recorder
 c1, c2, c3 = st.columns([1, 1, 8])
 
-final_q = None
+input_query = None
 with c1: audio = mic_recorder(start_prompt="🎙️", stop_prompt="🛑", key='mic')
-with c2: img = st.file_uploader("📷", type=['jpg','png'], label_visibility="collapsed")
+with c2: img = st.file_uploader("📷", type=['jpg','png'], label_visibility="collapsed", key="camera")
 with c3: txt = st.chat_input("Jaan, boliye...")
 
+# Input detection
 if audio and audio.get('bytes'):
-    final_q = speech_to_text(audio['bytes'])
-elif img: final_q = "Analyze image"
-elif txt: final_q = txt
+    input_query = speech_to_text(audio['bytes'])
+elif img: 
+    input_query = "SCAN_IMAGE_COMMAND"
+elif txt: 
+    input_query = txt
 
-# --- 📢 VOICE RESPONSE LOGIC ---
-if final_q:
-    st.session_state.messages.append({"role": "user", "content": final_q})
-    with st.chat_message("user"): st.write(final_q)
-
-    with st.spinner("Afreen is working..."):
+# --- 📢 LOGIC HANDLER (Loop Fix) ---
+# Sirf tabhi chalo jab nayi query aayi ho
+if input_query and input_query != st.session_state.last_processed:
+    st.session_state.last_processed = input_query # Ise lock kar do!
+    
+    st.session_state.messages.append({"role": "user", "content": "Command received..." if input_query == "SCAN_IMAGE_COMMAND" else input_query})
+    
+    with st.spinner("Afreen is processing..."):
         pins = []
-        if img:
+        if input_query == "SCAN_IMAGE_COMMAND":
             ans = visual_scanner(img)
         else:
-            # Pinterest Check
+            # Pinterest & Search logic
             fashion_words = ["dress", "outfit", "style", "kapde", "korean", "baggy"]
-            if any(w in final_q.lower() for w in fashion_words):
-                pins = pinterest_fashion_search(final_q)
+            if any(w in input_query.lower() for w in fashion_words):
+                pins = pinterest_fashion_search(input_query)
             
-            context = deep_scanner(final_q)
+            context = deep_scanner(input_query)
             ans = ai_brain(st.session_state.messages, context)
         
-        # Save & Speak
+        # Save & Respond
         msg_data = {"role": "assistant", "content": ans}
         if pins: msg_data["pins"] = pins
-        
         st.session_state.messages.append(msg_data)
         
-        # 🔊 Har command par bolne ke liye
+        # Speak & Finish
         asyncio.run(voice_power(ans))
-        st.rerun()
+        st.rerun() # Refresh to update UI and Stop Loop
