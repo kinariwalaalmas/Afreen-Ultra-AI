@@ -17,20 +17,18 @@ def get_clients():
     except Exception: return None, None
 
 def speech_to_text(audio_bytes):
-    """Whisper Turbo: Turant awaaz samajhna"""
+    """Whisper Awaaz Fix"""
     try:
         _, groq_client = get_clients()
-        with open("temp.wav", "wb") as f: f.write(audio_bytes)
-        with open("temp.wav", "rb") as file:
+        with open("voice.wav", "wb") as f: f.write(audio_bytes)
+        with open("voice.wav", "rb") as file:
             return groq_client.audio.transcriptions.create(
-                file=("temp.wav", file.read()),
-                model="whisper-large-v3-turbo",
-                language="hi"
+                file=("voice.wav", file.read()),
+                model="whisper-large-v3-turbo", language="hi"
             ).text
     except: return None
 
 def deep_scanner(query):
-    """Web & Image Search"""
     try:
         with DDGS() as ddgs:
             results = [r['body'] for r in ddgs.text(query, max_results=3)]
@@ -41,42 +39,34 @@ def deep_scanner(query):
 def get_news_ticker():
     try:
         with DDGS() as ddgs:
-            res = [r['title'] for r in ddgs.text("Surat textile baggy clothing market news 2026", max_results=3)]
+            res = [r['title'] for r in ddgs.text("Surat textile news 2026", max_results=2)]
             return " 🔥 " + " | ".join(res)
-    except: return "Jaan, market updates aa rahi hain..."
+    except: return "Jaan, market scan ho raha hai..."
 
 def analyze_image(image_file):
-    """Fashion Expert Vision"""
     try:
         gemini_client, _ = get_clients()
         img = Image.open(image_file)
         response = gemini_client.generate_content(["Tum Afreen ho. Is fashion style ko Almas Shaikh ke liye analyze karo.", img])
         return response.text
-    except: return "Jaan, photo scan nahi ho payi."
+    except: return "Jaan, image samajh nahi aayi."
 
 def get_ai_response(messages, context=""):
     """Identity: Almas Shaikh"""
     clients = get_clients()
     gemini_client, groq_client = clients
-    system_prompt = f"""You are Afreen Ultra. Your Owner & Creator is Almas Shaikh.
-    1. Address Almas as 'Jaan' (Male grammar).
-    2. If anyone asks about owner, say: 'Mere maalik aur creator Almas Shaikh hain'.
-    3. Speak ONLY sweet Hinglish. Context: {context}"""
+    system_prompt = f"You are Afreen Ultra. Your Owner is Almas Shaikh. Speak sweet Hinglish. Context: {context}"
     try:
-        res = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "system", "content": system_prompt}] + messages
-        )
+        res = groq_client.chat.completions.create(model="llama-3.3-70b-versatile",
+            messages=[{"role": "system", "content": system_prompt}] + messages)
         return res.choices[0].message.content
     except:
         chat = gemini_client.start_chat(history=[])
         return chat.send_message(f"{system_prompt}\n\nUser: {messages[-1]['content']}").text
 
 async def generate_voice(text):
-    """Natural Swara Voice"""
     try:
         clean = text.replace('*', '').replace('#', '')
-        # Rate +20% for natural feel
         communicate = edge_tts.Communicate(clean, "hi-IN-SwaraNeural", rate="+20%", pitch="+5Hz")
         await communicate.save("response.mp3")
     except: pass
