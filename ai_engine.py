@@ -8,38 +8,42 @@ import base64
 
 def get_clients():
     try:
-        # Google Gemini Brain
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"].strip())
         gemini = genai.GenerativeModel('gemini-1.5-flash')
-        
-        # Groq (Llama 3) Brain - Jo DeepSeek se bahut fast hai
         groq = Groq(api_key=st.secrets["GROQ_API_KEY"].strip())
         return gemini, groq
-    except Exception: 
-        return None, None
+    except Exception: return None, None
 
 def get_ai_response(messages, search_info=""):
-    """Ab sirf Google aur Groq ka power-packed combo"""
+    """Teeno Brains ka automatic combo!"""
     gemini_client, groq_client = get_clients()
-    system_prompt = f"You are Afreen, a sweet Hinglish AI. Address user as 'Jaan' (Male). Context: {search_info}"
+    system_prompt = f"You are Afreen, a sweet Hinglish girl. Use MASCULINE grammar. User is 'Jaan'. Context: {search_info}"
     
     user_query = messages[-1]["content"].lower()
     
     try:
-        # Groq (Llama 3.3 70B) use karegi lambe ya complex sawalon ke liye
-        if len(user_query) > 100:
+        # 1. Complex/Logical sawalon ke liye DeepSeek-R1
+        if any(word in user_query for word in ["socho", "plan", "business", "detail", "why"]):
             res = groq_client.chat.completions.create(
-                model="llama-3.3-70b-versatile", # DeepSeek ki jagah ye bahut fast hai
+                model="deepseek-r1-distill-llama-70b",
                 messages=[{"role": "system", "content": system_prompt}] + messages
             )
             return res.choices[0].message.content
         
-        # Baaki sab ke liye Google Gemini (Super Smart)
+        # 2. Fast chat ke liye Llama 3.3
+        elif len(user_query) > 50:
+            res = groq_client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "system", "content": system_prompt}] + messages
+            )
+            return res.choices[0].message.content
+            
+        # 3. Baaki sab ke liye Gemini 1.5 Flash
         else:
             chat = gemini_client.start_chat(history=[])
             response = chat.send_message(f"{system_prompt}\n\nUser: {user_query}")
             return response.text
     except:
-        return "Jaan, lagta hai network thoda kamzor hai, par main koshish kar rahi hoon..."
+        return "Jaan, dimaag ki thodi wires ulajh gayi hain, par main phir bhi aapke saath hoon!"
 
-# ... Baaki functions (generate_voice, web_search) same rahenge ...
+# ... Baki voice/search functions wese hi rahenge ...
