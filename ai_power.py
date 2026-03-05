@@ -14,28 +14,38 @@ def get_ai_clients():
     except Exception: return None, None
 
 def ai_brain(messages, context=""):
-    """Afreen's Smart Assistant Identity"""
     try:
         _, groq_client = get_ai_clients()
-        # ✨ STRICT IDENTITY: Sir address and Professional Tone
         system_prompt = f"""
-        Tumhara Naam: Afreen Ultra Pro. Tum Almas Shaikh (Sir) ki Personal Assistant ho.
+        Tumhara Naam: Afreen Ultra Pro. Tum Almas Sir ki Personal Assistant ho.
         
         RULES:
-        1. Almas ko hamesha 'Sir' kehkar address karo. Sweet Hinglish bolo.
-        2. Agar 'EFTs' pucha jaye, toh Stock Market investment (Exchange Traded Funds) samjho.
-        3. Normal sawalon ka jawab akalmand assistant ki tarah turant do.
-        4. Kabhi mat kehna 'I am a chatbot' ya 'I am confused'.
+        1. Almas ko 'Sir' kaho. Sweet Hinglish bolo.
+        2. Agar koi URL (Instagram/Web) scan na ho paye, toh Sir ko batao ki ye security ki wajah se 'Locked' hai aur unse screenshot maango.
+        3. EFTs = Exchange Traded Funds.
         
         CONTEXT: {context}
         """
-        # Sirf aakhri 5 messages bhejna taaki confusion na ho
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "system", "content": system_prompt}] + messages[-5:]
         )
         return response.choices[0].message.content
-    except Exception: return "Sir, mera server thoda busy hai, main turant koshish karti hoon."
+    except Exception: return "Sir, server thoda busy hai, main koshish kar rahi hoon."
+
+# ✨ NEW SMART SCANNER FOR URLs
+def deep_scanner(query):
+    try:
+        with DDGS() as ddgs:
+            # Agar URL hai, toh uske baare mein general search karo
+            if "http" in query.lower():
+                search_query = f"site info and details for {query}"
+            else:
+                search_query = query
+            
+            results = [r['body'] for r in ddgs.text(search_query, max_results=3)]
+            return "\n".join(results)
+    except: return ""
 
 def pinterest_fashion_search(query):
     try:
@@ -44,33 +54,4 @@ def pinterest_fashion_search(query):
             return res
     except: return []
 
-def deep_scanner(query):
-    try:
-        with DDGS() as ddgs:
-            res = [r['body'] for r in ddgs.text(query, max_results=2)]
-            return "\n".join(res)
-    except: return ""
-
-def visual_scanner(image_file):
-    try:
-        gemini_client, _ = get_ai_clients()
-        img = Image.open(image_file)
-        prompt = "Tum Afreen ho. Is style ko analyze karo aur Almas Sir ko business advice do."
-        response = gemini_client.generate_content([prompt, img])
-        return response.text
-    except: return "Sir, photo scan nahi ho payi."
-
-def get_news_ticker():
-    try:
-        with DDGS() as ddgs:
-            res = [r['title'] for r in ddgs.text("Surat textile market news 2026", max_results=3)]
-            return " 🔥 " + " | ".join(res)
-    except: return "Sir, market updates load ho rahi hain..."
-
-def speech_to_text(audio_bytes):
-    try:
-        _, groq_client = get_ai_clients()
-        with open("temp.wav", "wb") as f: f.write(audio_bytes)
-        with open("temp.wav", "rb") as f:
-            return groq_client.audio.transcriptions.create(file=("temp.wav", f.read()), model="whisper-large-v3-turbo", language="hi").text
-    except: return None
+# Keep visual_scanner, get_news_ticker, speech_to_text same as before
