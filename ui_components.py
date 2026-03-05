@@ -3,12 +3,11 @@ from streamlit_mic_recorder import mic_recorder
 
 def render_sidebar():
     with st.sidebar:
-        st.markdown("### 👸 Afreen Premium")
-        brain = st.selectbox("Brain Choice:", ["DeepSeek-R1 (Thinking)", "Llama 3.3 (Fast)"], index=0)
+        st.markdown("### 👸 Afreen Ultra")
+        st.write("✨ **Unified Brain Active**")
         st.divider()
-        st.write("📍 **Surat Market Partner**")
-        st.info("Expert in: Baggy Jeans & Korean Tees")
-        return brain
+        st.info("Expert in: Surat Baggy Clothing Market")
+        st.write("📍 Market: Ring Road, Surat")
 
 def render_plus_menu():
     with st.popover("＋"):
